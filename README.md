@@ -1,7 +1,7 @@
 # SuperCharge SG — AI Customer Support Chatbot
 **Challenge 1 · SuperCharge SG Build Challenge 2026**
 
-> RAG-powered Telegram + WhatsApp (Twilio bonus) bot grounded in real SuperCharge SG knowledge.  
+> RAG-powered Telegram bot grounded in real SuperCharge SG knowledge.  
 > **LLM:** Google Gemini 1.5 Flash · **Vector DB:** ChromaDB · **Leads:** Google Sheets · **Alerts:** Slack + Email
 
 ---
@@ -9,43 +9,9 @@
 ## Architecture Overview
 
 ```
-User (Telegram / WhatsApp)
-        │
-        ▼
-┌───────────────────────────┐
-│   Bot Gateway             │
-│   python-telegram-bot v20 │  (Telegram polling)
-│   FastAPI + Twilio        │  (WhatsApp webhook)
-└──────────┬────────────────┘
-           │ user_msg + chat_id
-           ▼
-┌───────────────────────────┐
-│   Session Manager         │  In-memory dict keyed by chat_id
-│   (session.py)            │  Last 5 msg pairs · TTL 30 min
-└──────────┬────────────────┘
-           ▼
-┌───────────────────────────┐
-│   Intent Router           │  Regex keyword classifier
-│   (intent.py)             │  greeting|faq|price|lead|fault|escalation|unknown
-└──────────┬────────────────┘
-           │
-  ┌────────┴──────────────────────────────┐
-  ▼           ▼              ▼             ▼
-Greeting   Lead Flow     Escalation    RAG + LLM
-           multi-turn    Slack alert      │
-           (leads.py)    + Email alert    │
-           → Google                  ┌───┴──────────┐
-             Sheets                  │  ChromaDB    │  Persisted on disk
-                                     │  all-MiniLM  │  sentence-transformers
-                                     │  top-3 chunks│  (free, local)
-                                     └───┬──────────┘
-                                         │ context
-                                         ▼
-                                    ┌──────────────┐
-                                    │  Gemini 1.5  │  Flash model
-                                    │  Flash LLM   │  System prompt + KB ctx
-                                    │  (llm_client)│  SuperCharge SG persona
-                                    └──────────────┘
+<img width="666" height="866" alt="challenge2 drawio" src="https://github.com/user-attachments/assets/b8870563-307d-445c-8993-113fcff91f1d" />
+
+
 ```
 
 ---
