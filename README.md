@@ -9,7 +9,7 @@
 ## Architecture Overview
 
 ```
-[<img width="666" height="866" alt="challenge2 drawio" src="https://github.com/user-attachments/assets/b8870563-307d-445c-8993-113fcff91f1d" />](https://github.com/Iguro02/supercharge-bot/blob/main/challenge2.drawio.png?raw=true)
+![image_alt](https://github.com/Iguro02/supercharge-bot/blob/main/challenge2.drawio.png?raw=true)
 
 
 ```
