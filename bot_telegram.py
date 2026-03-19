@@ -126,7 +126,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.message.reply_text(_safe(reply))
         return
 
-    # FAQ / price / fault / unknown → RAG + LLM
+    # ── Fault — RAG + LLM + background escalation alert ─────────────────────
+    if intent == "fault":
+        sess_mgr.add_message(chat_id, "user", user_msg)
+        history = sess_mgr.get_history(chat_id)
+        context_text = retrieve_context(user_msg)
+        sess_mgr.reset_failed_intents(chat_id)
+        llm_reply = chat(history, context_text)
+        sess_mgr.add_message(chat_id, "assistant", llm_reply)
+        # Fire escalation alert silently in background
+        trigger_escalation(
+            chat_id, username, history,
+            reason=f"Fault report: {user_msg[:120]}"
+        )
+        # Append escalation notice to user reply
+        fault_reply = (
+            llm_reply + "\n\n"
+            "I have also alerted our technical team about your issue. "
+            "Someone will follow up with you shortly."
+        )
+        await update.message.reply_text(_safe(fault_reply))
+        return
+
+    # FAQ / price / unknown → RAG + LLM
     sess_mgr.add_message(chat_id, "user", user_msg)
     history = sess_mgr.get_history(chat_id)
     context_text = retrieve_context(user_msg)
