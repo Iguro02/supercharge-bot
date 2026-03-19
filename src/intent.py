@@ -28,7 +28,7 @@ _INTENT_PATTERNS: list[tuple[str, list[str]]] = [
         r"\bmaintenance\b",
     ]),
     ("lead", [
-        r"\binterested in\b", r"\bwant to (buy|install|get|enquire|know more)\b",
+        r"\binterested \b", r"\bwant to (buy|install|get|enquire|know more)\b",
         r"\bquote\b", r"\bsite assessment\b", r"\bbook (a |an |)(appointment|visit|call)\b",
         r"\bsign up\b", r"\bget in touch\b", r"\bcontact (me|us)\b",
         r"\binstall (solar|charger|ev)\b",
