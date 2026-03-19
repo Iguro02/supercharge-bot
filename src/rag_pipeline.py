@@ -18,7 +18,7 @@ from sentence_transformers import SentenceTransformer
 logger = logging.getLogger(__name__)
 
 KB_PATH       = Path(__file__).parent.parent / "data" / "knowledge_base.txt"
-EMBED_MODEL   = "paraphrase-MiniLM-L3-v2"   # 3x faster than L6, ~17MB vs ~90MB
+EMBED_MODEL   = "all-MiniLM-L6-v2"
 TOP_K         = 3
 CHUNK_SIZE    = 400
 CHUNK_OVERLAP = 50
