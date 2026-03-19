@@ -174,7 +174,7 @@ Lead data saved: Timestamp, Name, Email, Enquiry Type, Platform (Telegram/WhatsA
 - **Intent classifier:** Rule-based regex works well for known patterns. Edge cases (ambiguous phrasing) may hit `unknown`. A Gemini-based intent classifier call would handle these better.
 - **Language:** English only. SuperCharge SG's Singapore audience may benefit from Mandarin/Malay support.
 - **No rate limiting per user:** Add FastAPI middleware or a token bucket in `session.py` for production.
-- **Railway Free Tier Limitation:**  Free tier deployment of Railway limits the use of GPU for Sentance Tranformer due to Build Image Size Execeeding Quota, possibly limiting the full potential of RAG Retrieval. 
+- **Railway Free Tier Limitation:**  Free tier deployment of Railway limits the use of GPU in Sentance Tranformer resorting to CPU due to Build Image Size Execeeding Quota, possibly limiting the full potential of RAG Retrieval. 
 
 ---
 
