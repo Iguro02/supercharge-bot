@@ -169,7 +169,7 @@ python -c "from src.rag_pipeline import build_kb; build_kb()"
 
 - **In-memory sessions:** Restart clears all sessions.
 - **Gemini rate limits:** Free tier has 10 RPM (Request per Minute)  & 20 RPD (Request per Day). Sufficient for evaluation, must upgrade for production.
-- **Intent classifier:** Rule-based regex works well for known patterns. Edge cases (ambiguous phrasing) may hit `unknown`. A Gemini-based intent classifier call would handle these better.
+- **Intent classifier:** **Rule-based regex** works well for known patterns. **Edge cases (ambiguous phrasing) may hit** `unknown`.
 - **Language:** English only. SuperCharge SG's Singapore audience may benefit from Mandarin/Malay support.
 - **Railway Free Tier Limitation:**  Free tier deployment of Railway limits the use of GPU in Sentance Tranformer resorting to CPU due to Build Image Size Execeeding Quota, possibly limiting the full potential of RAG Retrieval. \
 - - **Cold starts:** First message after inactivity takes 20–30 seconds.
