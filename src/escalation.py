@@ -21,8 +21,13 @@ def trigger_escalation(
     history: list[dict],
     reason: str = "User requested human",
 ) -> str:
+    """
+    Fire escalation alerts to Slack AND email.
+    Returns the handoff message to send back to the user.
+    """
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
 
+    # Build conversation summary (last 3 turns)
     summary_lines = []
     for msg in history[-6:]:
         role = "User" if msg["role"] == "user" else "Bot"
@@ -33,11 +38,11 @@ def trigger_escalation(
     _send_email(chat_id, username, timestamp, reason, summary_text)
 
     return (
-        "Of course! I'm flagging this conversation to our team right now.\n\n"
+        "Of course! I'm flagging this conversation to our team right now. 🙋\n\n"
         "A SuperCharge SG team member will follow up with you shortly.\n\n"
         "In the meantime, you're also welcome to reach us directly:\n"
-        "Email: yusuf@supercharge.sg\n"
-        "Web: supercharge.sg\n\n"
+        "📧 yusuf@supercharge.sg\n"
+        "🌐 supercharge.sg\n\n"
         "Is there anything else I can help clarify while you wait?"
     )
 
@@ -51,7 +56,10 @@ def _send_slack(chat_id: str, username: str, timestamp: str, reason: str, summar
 
     payload = {
         "blocks": [
-            {"type": "header", "text": {"type": "plain_text", "text": "SuperBot — Human Handoff Required"}},
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": "🚨 SuperBot — Human Handoff Required"},
+            },
             {
                 "type": "section",
                 "fields": [
@@ -62,7 +70,13 @@ def _send_slack(chat_id: str, username: str, timestamp: str, reason: str, summar
                 ],
             },
             {"type": "divider"},
-            {"type": "section", "text": {"type": "mrkdwn", "text": f"*Recent conversation:*\n```{summary}```"}},
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Recent conversation:*\n```{summary}```",
+                },
+            },
         ]
     }
 
@@ -76,30 +90,22 @@ def _send_slack(chat_id: str, username: str, timestamp: str, reason: str, summar
 
 # ── Email (SMTP) ──────────────────────────────────────────────────────────────
 def _send_email(chat_id: str, username: str, timestamp: str, reason: str, summary: str) -> None:
-    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
-    smtp_port = int(os.getenv("SMTP_PORT", "587"))
-    smtp_user = os.getenv("SMTP_USER")
-    smtp_pass = os.getenv("SMTP_PASS")
-    to_addr   = os.getenv("ESCALATION_EMAIL_TO")
-    from_addr = os.getenv("ESCALATION_EMAIL_FROM", smtp_user)
+    smtp_host  = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    smtp_port  = int(os.getenv("SMTP_PORT", "587"))
+    smtp_user  = os.getenv("SMTP_USER")
+    smtp_pass  = os.getenv("SMTP_PASS")
+    to_addr    = os.getenv("ESCALATION_EMAIL_TO")
+    from_addr  = os.getenv("ESCALATION_EMAIL_FROM", smtp_user)
 
-    # ── Diagnose missing config ───────────────────────────────────────────────
-    if not smtp_user:
-        logger.error("EMAIL FAILED: SMTP_USER not set in environment variables.")
-        return
-    if not smtp_pass:
-        logger.error("EMAIL FAILED: SMTP_PASS not set in environment variables.")
-        return
-    if not to_addr:
-        logger.error("EMAIL FAILED: ESCALATION_EMAIL_TO not set in environment variables.")
+    if not all([smtp_user, smtp_pass, to_addr]):
+        logger.warning("Email credentials not fully set — email alert skipped.")
         return
 
-    logger.info(f"Sending email to {to_addr} via {smtp_host}:{smtp_port} as {smtp_user} ...")
+    subject = f"[SuperBot] Human Handoff Required — Chat {chat_id}"
 
-    subject  = f"[SuperBot] Human Handoff Required — Chat {chat_id}"
     html_body = f"""
     <html><body style="font-family: Arial, sans-serif; color: #333;">
-      <h2 style="color:#e85d04;">SuperBot — Human Handoff Required</h2>
+      <h2 style="color:#e85d04;">🚨 SuperBot — Human Handoff Required</h2>
       <table cellpadding="8" style="border-collapse:collapse; width:100%;">
         <tr><td style="font-weight:bold; width:120px;">Chat ID</td><td><code>{chat_id}</code></td></tr>
         <tr style="background:#f9f9f9;"><td style="font-weight:bold;">User</td><td>{username or 'Unknown'}</td></tr>
@@ -108,7 +114,9 @@ def _send_email(chat_id: str, username: str, timestamp: str, reason: str, summar
       </table>
       <h3 style="margin-top:20px;">Recent Conversation</h3>
       <pre style="background:#f4f4f4; padding:12px; border-radius:6px; white-space:pre-wrap;">{summary}</pre>
-      <p style="color:#888; font-size:12px; margin-top:20px;">Sent automatically by SuperBot · SuperCharge SG</p>
+      <p style="color:#888; font-size:12px; margin-top:20px;">
+        Sent automatically by SuperBot · SuperCharge SG
+      </p>
     </body></html>
     """
 
@@ -118,36 +126,11 @@ def _send_email(chat_id: str, username: str, timestamp: str, reason: str, summar
     msg["To"]      = to_addr
     msg.attach(MIMEText(html_body, "html"))
 
-    # ── Try port 587 (STARTTLS) first, fallback to port 465 (SSL) ────────────
-    errors = []
-
-    # Attempt 1: port 587 STARTTLS
     try:
-        logger.info("Trying SMTP port 587 (STARTTLS) ...")
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
-            server.ehlo()
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
             server.starttls()
-            server.ehlo()
             server.login(smtp_user, smtp_pass)
             server.sendmail(from_addr, to_addr, msg.as_string())
-        logger.info(f"Email sent successfully to {to_addr} via port 587.")
-        return
+        logger.info(f"Email escalation alert sent to {to_addr} for chat_id={chat_id}")
     except Exception as e:
-        errors.append(f"Port 587 failed: {e}")
-        logger.warning(f"Port 587 failed: {e} — trying port 465 ...")
-
-    # Attempt 2: port 465 SSL (fallback — Railway sometimes blocks 587)
-    try:
-        logger.info("Trying SMTP port 465 (SSL) ...")
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as server:
-            server.ehlo()
-            server.login(smtp_user, smtp_pass)
-            server.sendmail(from_addr, to_addr, msg.as_string())
-        logger.info(f"Email sent successfully to {to_addr} via port 465.")
-        return
-    except Exception as e:
-        errors.append(f"Port 465 failed: {e}")
-        logger.error(f"Port 465 also failed: {e}")
-
-    logger.error(f"ALL email attempts failed: {errors}")
-    logger.error("Check: 1) Gmail App Password correct? 2) 2FA enabled? 3) SMTP env vars set in Railway?")
+        logger.error(f"Email send failed: {e}")
