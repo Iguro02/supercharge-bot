@@ -2,7 +2,7 @@
 **Challenge 1 · SuperCharge SG Build Challenge 2026**
 
 > RAG-powered Telegram bot grounded in real SuperCharge SG knowledge.  
-> **LLM:** Google Gemini 1.5 Flash · **Vector DB:** ChromaDB · **Leads:** Google Sheets · **Alerts:** Slack + Email
+> **LLM:** Google Gemini · **Vector DB:** ChromaDB · **Leads:** Google Sheets · **Alerts:** Slack + Email
 
 ---
 
