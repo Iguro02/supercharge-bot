@@ -5,6 +5,10 @@
 > **LLM:** Google Gemini · **Vector DB:** ChromaDB · **Leads:** Google Sheets · **Alerts:** Slack + Email
 
 ---
+Telegram Bot: https://t.me/superchargesg_bot 
+---
+
+---
 
 ## Architecture Overview
 
