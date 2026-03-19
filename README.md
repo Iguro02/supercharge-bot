@@ -8,7 +8,7 @@
 
 ## Architecture Overview
 
-![image_alt](https://github.com/Iguro02/supercharge-bot/blob/main/challenge2.drawio.png?raw=true)
+<img width="666" height="866" alt="Untitled Diagram drawio" src="https://github.com/user-attachments/assets/70febef6-05a4-4f05-8d11-5e751f8e8a04" />
 
 
 ---
