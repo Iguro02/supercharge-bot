@@ -50,7 +50,7 @@ def _gemini_chat(messages: list[dict], context: str) -> str:
     system_text, contents = _build_gemini_contents(messages, context)
 
     model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash-lite",  
+        model_name="gemini-2.5-flash",  
         system_instruction=system_text,
         generation_config={
             "max_output_tokens": 600,
