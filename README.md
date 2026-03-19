@@ -77,13 +77,6 @@ cp .env.example .env
 
 > Share your Google Sheet with the service account's email address (Editor access).
 
-**For WhatsApp bonus (Twilio Sandbox):**
-| Variable | How |
-|----------|-----|
-| `TWILIO_ACCOUNT_SID` | [console.twilio.com](https://console.twilio.com) → Account Info |
-| `TWILIO_AUTH_TOKEN` | Same page |
-| `TWILIO_WHATSAPP_FROM` | Always `whatsapp:+14155238886` for sandbox |
-
 ### 3. Run locally
 
 ```bash
@@ -113,12 +106,6 @@ python -c "from src.rag_pipeline import build_kb; build_kb()"
 4. Railway detects `Dockerfile` and deploys automatically
 5. Bot stays live 24/7 (no sleep on Railway Starter plan)
 
-**For WhatsApp on Railway**, change the start command in `railway.toml`:
-```toml
-[deploy]
-startCommand = "uvicorn bot_whatsapp:app --host 0.0.0.0 --port $PORT"
-```
-Then set your Railway public URL as the Twilio webhook.
 
 ---
 
@@ -169,11 +156,10 @@ Lead data saved: Timestamp, Name, Email, Enquiry Type, Platform (Telegram/WhatsA
 
 ## Known Limitations
 
-- **In-memory sessions:** Restart clears all sessions. For production, replace `session.py` with Redis (`redis-py`, TTL=30min).
-- **Gemini rate limits:** Free tier has 10 RPM  & 20 RPD. Sufficient for evaluation; upgrade for production.
+- **In-memory sessions:** Restart clears all sessions.
+- **Gemini rate limits:** Free tier has 10 RPM (Request per Minute)  & 20 RPD (Request per Day). Sufficient for evaluation; upgrade for production.
 - **Intent classifier:** Rule-based regex works well for known patterns. Edge cases (ambiguous phrasing) may hit `unknown`. A Gemini-based intent classifier call would handle these better.
 - **Language:** English only. SuperCharge SG's Singapore audience may benefit from Mandarin/Malay support.
-- **No rate limiting per user:** Add FastAPI middleware or a token bucket in `session.py` for production.
 - **Railway Free Tier Limitation:**  Free tier deployment of Railway limits the use of GPU in Sentance Tranformer resorting to CPU due to Build Image Size Execeeding Quota, possibly limiting the full potential of RAG Retrieval. 
 
 ---
@@ -183,7 +169,6 @@ Lead data saved: Timestamp, Name, Email, Enquiry Type, Platform (Telegram/WhatsA
 ```
 supercharge-bot/
 ├── bot_telegram.py          # Telegram bot entrypoint (run this)
-├── bot_whatsapp.py          # WhatsApp/Twilio FastAPI webhook (+20 bonus)
 ├── requirements.txt
 ├── Dockerfile
 ├── railway.toml             # Railway.app deployment config
