@@ -170,10 +170,11 @@ Lead data saved: Timestamp, Name, Email, Enquiry Type, Platform (Telegram/WhatsA
 ## Known Limitations
 
 - **In-memory sessions:** Restart clears all sessions. For production, replace `session.py` with Redis (`redis-py`, TTL=30min).
-- **Gemini rate limits:** Free tier has 15 RPM / 1M TPD. Sufficient for evaluation; upgrade for production.
+- **Gemini rate limits:** Free tier has 10 RPM  & 20 RPD. Sufficient for evaluation; upgrade for production.
 - **Intent classifier:** Rule-based regex works well for known patterns. Edge cases (ambiguous phrasing) may hit `unknown`. A Gemini-based intent classifier call would handle these better.
 - **Language:** English only. SuperCharge SG's Singapore audience may benefit from Mandarin/Malay support.
 - **No rate limiting per user:** Add FastAPI middleware or a token bucket in `session.py` for production.
+- **Railway Free Tier Limitation:**  Free tier deployment of Railway limits the use of GPU for Sentance Tranformer due to Build Image Size Execeeding Quota, possibly limiting the full potential of RAG Retrieval. 
 
 ---
 
