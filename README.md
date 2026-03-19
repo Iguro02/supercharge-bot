@@ -8,11 +8,8 @@
 
 ## Architecture Overview
 
-```
 ![image_alt](https://github.com/Iguro02/supercharge-bot/blob/main/challenge2.drawio.png?raw=true)
 
-
-```
 
 ---
 
