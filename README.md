@@ -43,6 +43,46 @@ Gemini is instructed via system prompt to answer **only** from the provided cont
 
 ---
 
+## Escalation Behaviour
+ 
+Triggered by: fault reports, human agent requests, or 3 consecutive failed RAG lookups.
+ 
+**Slack alert includes:**
+- Chat ID and username
+- Timestamp (UTC)
+- Reason for escalation
+- Last 3 conversation turns
+ 
+**Brevo email alert includes:**
+- Same information, HTML formatted
+- Sent to `ESCALATION_EMAIL_TO`
+- Uses Brevo HTTP API (port 443) — not SMTP, works on Railway free tier
+ 
+Both fire simultaneously and independently.
+ 
+---
+ 
+## Lead Capture Flow
+ 
+```
+User: "I'm interested in solar panels"
+  → Bot: "What's your name?"
+User: "Ahmad"
+  → Bot: "Nice to meet you Ahmad! What's your email?"
+User: "ahmad@email.com"
+  → Bot: "What are you enquiring about? [1-5 options]"
+User: "1"
+  → Bot: "Thank you! Our team will reach out shortly."
+  → Google Sheet row written within seconds
+```
+ 
+**Sheet columns (always consistent):**
+| Timestamp | Name | Email | Enquiry Type | Platform | Chat ID |
+ 
+Headers are enforced on row 1 every time — sheet is always clean.
+ 
+---
+
 ## Setup Instructions
 
 ### 1. Clone & install dependencies
@@ -63,13 +103,25 @@ cp .env.example .env
 **Required:**
 | Variable | Where to get it |
 |----------|----------------|
-| `TELEGRAM_BOT_TOKEN` | Message @BotFather on Telegram → `/newbot` |
-| `GEMINI_API_KEY` | [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) — free |
-| `SLACK_WEBHOOK_URL` | [api.slack.com/apps](https://api.slack.com/apps) → Incoming Webhooks |
-| `SMTP_USER` / `SMTP_PASS` | Gmail App Password (myaccount.google.com/apppasswords) |
-| `ESCALATION_EMAIL_TO` | Email to receive handoff alerts (e.g. yusuf@supercharge.sg) |
+| `TELEGRAM_BOT_TOKEN` | @BotFather on Telegram → /newbot |
+| `GEMINI_API_KEY` | aistudio.google.com/app/apikey (free) |
+| `LLM_PROVIDER` | Set to `gemini` |
+| `SLACK_WEBHOOK_URL` | api.slack.com/apps → Incoming Webhooks |
+| `BREVO_API_KEY` | brevo.com → SMTP & API → API Keys (free) |
+| `ESCALATION_EMAIL_TO` | Email to receive handoff alerts |
+| `ESCALATION_EMAIL_FROM` | Your sender email |
+| `GOOGLE_SHEET_ID` | From Google Sheet URL between /d/ and /edit |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | GCP Service Account JSON file path |
 
 **For lead capture (Google Sheets):**
+
+### 4. Google Sheets setup
+ 
+1. Create a Google Sheet → copy Sheet ID from URL
+2. GCP Console → Enable Google Sheets API + Google Drive API
+3. Create Service Account → download JSON → save as `credentials/google_service_account.json`
+4. Share the sheet with the service account email as Editor
+
 | Variable | How |
 |----------|-----|
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | GCP Console → Service Account → Download JSON → save to `credentials/` |
@@ -83,11 +135,6 @@ cp .env.example .env
 # Telegram bot
 python bot_telegram.py
 
-# WhatsApp bot (separate terminal — needs ngrok)
-uvicorn bot_whatsapp:app --port 8000
-ngrok http 8000
-# Copy the ngrok HTTPS URL → Twilio console → WhatsApp Sandbox Settings → Webhook URL:
-# https://xxxx.ngrok.io/whatsapp
 ```
 
 ### 4. Knowledge base builds automatically on first run
@@ -118,49 +165,14 @@ python -c "from src.rag_pipeline import build_kb; build_kb()"
 
 ---
 
-## Escalation Behaviour
-
-When triggered (user says "speak to a person" OR 3 consecutive failed RAG lookups):
-
-**Slack alert includes:**
-- Chat ID and username
-- Timestamp (UTC)
-- Reason for escalation
-- Last 3 conversation turns (formatted code block)
-
-**Email alert includes:**
-- Same information, HTML-formatted
-- Sent to `ESCALATION_EMAIL_TO` (e.g. yusuf@supercharge.sg)
-
-Both fire simultaneously. If one fails (e.g. Slack is down), the other still fires.
-
----
-
-## Lead Capture Flow
-
-```
-User: "I'm interested in solar panels"
-  → Bot: "What's your name?"
-User: "Ahmad"
-  → Bot: "Nice to meet you Ahmad! What's your email?"
-User: "ahmad@email.com"
-  → Bot: "What are you enquiring about? [1–5 options]"
-User: "1"  (or "Solar Panel Installation")
-  → Bot: "Thank you! Our team will reach out to ahmad@email.com shortly."
-  → Google Sheet updated within seconds
-```
-
-Lead data saved: Timestamp, Name, Email, Enquiry Type, Platform (Telegram/WhatsApp), Chat ID
-
----
-
 ## Known Limitations
 
 - **In-memory sessions:** Restart clears all sessions.
-- **Gemini rate limits:** Free tier has 10 RPM (Request per Minute)  & 20 RPD (Request per Day). Sufficient for evaluation; upgrade for production.
+- **Gemini rate limits:** Free tier has 10 RPM (Request per Minute)  & 20 RPD (Request per Day). Sufficient for evaluation, must upgrade for production.
 - **Intent classifier:** Rule-based regex works well for known patterns. Edge cases (ambiguous phrasing) may hit `unknown`. A Gemini-based intent classifier call would handle these better.
 - **Language:** English only. SuperCharge SG's Singapore audience may benefit from Mandarin/Malay support.
-- **Railway Free Tier Limitation:**  Free tier deployment of Railway limits the use of GPU in Sentance Tranformer resorting to CPU due to Build Image Size Execeeding Quota, possibly limiting the full potential of RAG Retrieval. 
+- **Railway Free Tier Limitation:**  Free tier deployment of Railway limits the use of GPU in Sentance Tranformer resorting to CPU due to Build Image Size Execeeding Quota, possibly limiting the full potential of RAG Retrieval. \
+- - **Cold starts:** First message after inactivity takes 20–30 seconds.
 
 ---
 
