@@ -1,12 +1,12 @@
 """
 escalation.py
-Sends human handoff alerts via Slack webhook + Resend HTTP email API.
-Uses HTTP only — no SMTP, works on Railway free tier.
+Sends human handoff alerts via Slack + Brevo HTTP email API.
+Brevo (formerly Sendinblue) allows sending to any email without domain verification.
+No SMTP — works on Railway free tier.
 """
 from __future__ import annotations
 
 import os
-import json
 import logging
 import httpx
 from datetime import datetime
@@ -29,7 +29,7 @@ def trigger_escalation(
     summary_text = "\n".join(summary_lines) if summary_lines else "No prior messages"
 
     _send_slack(chat_id, username, timestamp, reason, summary_text)
-    _send_email_resend(chat_id, username, timestamp, reason, summary_text)
+    _send_email_brevo(chat_id, username, timestamp, reason, summary_text)
 
     return (
         "Of course! I'm flagging this conversation to our team right now.\n\n"
@@ -73,20 +73,21 @@ def _send_slack(chat_id: str, username: str, timestamp: str, reason: str, summar
         logger.error(f"Slack webhook failed: {e}")
 
 
-# ── Email via Resend HTTP API (no SMTP — works on Railway) ────────────────────
-def _send_email_resend(chat_id: str, username: str, timestamp: str, reason: str, summary: str) -> None:
-    api_key  = os.getenv("RESEND_API_KEY")
-    to_addr  = os.getenv("ESCALATION_EMAIL_TO")
-    from_addr = os.getenv("ESCALATION_EMAIL_FROM", "SuperBot <onboarding@resend.dev>")
+# ── Email via Brevo HTTP API (no domain verification needed) ──────────────────
+def _send_email_brevo(chat_id: str, username: str, timestamp: str, reason: str, summary: str) -> None:
+    api_key   = os.getenv("BREVO_API_KEY")
+    to_addr   = os.getenv("ESCALATION_EMAIL_TO")
+    from_addr = os.getenv("ESCALATION_EMAIL_FROM", "shameer1402@gmail.com")
+    from_name = "SuperBot — SuperCharge SG"
 
     if not api_key:
-        logger.error("EMAIL FAILED: RESEND_API_KEY not set in Railway environment variables.")
+        logger.error("EMAIL FAILED: BREVO_API_KEY not set in Railway environment variables.")
         return
     if not to_addr:
         logger.error("EMAIL FAILED: ESCALATION_EMAIL_TO not set in environment variables.")
         return
 
-    logger.info(f"Sending email via Resend HTTP API to {to_addr} ...")
+    logger.info(f"Sending email via Brevo HTTP API to {to_addr} ...")
 
     html_body = f"""
     <html><body style="font-family: Arial, sans-serif; color: #333;">
@@ -104,25 +105,25 @@ def _send_email_resend(chat_id: str, username: str, timestamp: str, reason: str,
     """
 
     payload = {
-        "from": from_addr,
-        "to":   [to_addr],
+        "sender":  {"name": from_name, "email": from_addr},
+        "to":      [{"email": to_addr}],
         "subject": f"[SuperBot] Human Handoff Required — Chat {chat_id}",
-        "html": html_body,
+        "htmlContent": html_body,
     }
 
     try:
         resp = httpx.post(
-            "https://api.resend.com/emails",
+            "https://api.brevo.com/v3/smtp/email",
             headers={
-                "Authorization": f"Bearer {api_key}",
+                "api-key": api_key,
                 "Content-Type": "application/json",
             },
             json=payload,
             timeout=15,
         )
-        if resp.status_code == 200 or resp.status_code == 201:
-            logger.info(f"Email sent successfully to {to_addr} via Resend.")
+        if resp.status_code in (200, 201):
+            logger.info(f"Email sent successfully to {to_addr} via Brevo.")
         else:
-            logger.error(f"Resend API error {resp.status_code}: {resp.text}")
+            logger.error(f"Brevo API error {resp.status_code}: {resp.text}")
     except Exception as e:
-        logger.error(f"Resend email failed: {e}")
+        logger.error(f"Brevo email failed: {e}")
