@@ -11,8 +11,7 @@ RUN pip install --no-cache-dir "numpy<2.0"
 
 # CPU-only torch
 RUN pip install --no-cache-dir \
-    torch==2.2.2+cpu \
-    --index-url https://download.pytorch.org/whl/cpu
+    torch==2.2.2
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
