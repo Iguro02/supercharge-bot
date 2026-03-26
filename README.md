@@ -9,6 +9,10 @@ Telegram Bot: https://t.me/superchargesg_bot
 ---
 
 ---
+Google Sheet Leeds: [https://t.me/superchargesg_bot ](https://docs.google.com/spreadsheets/d/1Gy7BsLy1ZnWqJ9jyS2KgFUn46znP5AyEm6Y0vjzyEVQ/edit?usp=sharing)
+---
+
+---
 
 ## Architecture Overview
 
